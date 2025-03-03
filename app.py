@@ -17,31 +17,13 @@ def upload_documents(file_path):
     """Upload a PDF to MongoDB Atlas with embeddings."""
     print(f"Uploading {file_path} to MongoDB Atlas...")
     
-    # Load the source
-    pages = utils.load_pdf(file_path)
-    chunks = utils.split_text(pages)
-    print(f"Loaded {len(chunks)} chunks from {file_path}.")
-    
-    # Generate embeddings
-    final_chunks = utils.iterative_merging(chunks)
-    final_chunks_embeddings = utils.generate_final_embeddings(final_chunks)
-    print(f"Generated embeddings for {len(final_chunks)} chunks.")
-    
-    # Prepare documents for MongoDB
-    documents = []
-    for (text, metadata), embedding in zip(final_chunks, final_chunks_embeddings):
-        doc = {
-            "text": text,
-            "embedding": embedding,
-            "metadata": metadata  # Stores page number and other relevant metadata
-        }
-        documents.append(doc)
+    documents = utils.semantic_chunking(file_path)
     
     # Clear previous data and insert new
-    print("Clearing existing documents in the collection...")
-    collection.delete_many({})
-    collection.insert_many(documents)
-    print(f"Uploaded {len(documents)} chunks to MongoDB.")
+    #print("Clearing existing documents in the collection...")
+    #collection.delete_many({})
+    #collection.insert_many(documents)
+    #print(f"Uploaded {len(documents)} chunks to MongoDB.")
 
 def query_documents(query, k=1):
     """Query MongoDB Atlas for relevant chunks."""
@@ -72,8 +54,8 @@ def query_documents(query, k=1):
         print(f"Error during search: {e}")
 
 if __name__ == "__main__":
-    pdf_path = "./OERs/BeerHistory.pdf"
+    pdf_path = "./OERs/ML_mod1.1.pdf"
     upload_documents(pdf_path)
     
-    sample_query = "Explain how beer was connected to religion"
-    query_documents(sample_query)
+    #sample_query = "Explain how beer was connected to religion"
+    #query_documents(sample_query)

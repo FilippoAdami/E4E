@@ -24,7 +24,7 @@ def load_pdf(file_path):
         page.page_content = clean_text(page.page_content)
     return pages
 
-def split_text(pages, min_chars=50, overlap_ratio=0.1):
+def split_text(pages, min_chars=2500):
     """
     Split text into chunks at '.', '\n\n', or after min_chars with overlap.
     Keeps track of page numbers in the metadata.
@@ -60,12 +60,6 @@ def split_text(pages, min_chars=50, overlap_ratio=0.1):
             else:
                 # Save current chunk along with its metadata
                 chunks.append((current_chunk.strip(), current_metadata))
-                # Compute overlap using words so we don't cut words in half
-                overlap_size = int(min_chars * overlap_ratio)
-                words = current_chunk.split()
-                overlap_words = " ".join(words[-overlap_size:]) if len(words) > overlap_size else current_chunk
-                # Start new chunk with overlap; update metadata: keep the smallest page number
-                current_chunk = overlap_words + " " + sentence
                 current_metadata = {"page": min(current_metadata["page"], page_number)}
         # End of page: check if the chunk ends with proper punctuation
         if re.search(r"[.!?](”|')?$", current_chunk.strip()):
@@ -79,74 +73,23 @@ def split_text(pages, min_chars=50, overlap_ratio=0.1):
 
     return chunks
 
-def compute_cosine_similarity(vec1, vec2):
-    """Compute cosine similarity between two vectors."""
-    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+def compute_cosine_similarity(e1, e2):
+    e1 = np.array(e1).reshape(1, -1)
+    e2 = np.array(e2).reshape(1, -1)
+    sim = cosine_similarity(e1, e2)[0][0]
+    return sim
 
-def compute_local_similarities(embeddings):
+def compute_similarities(embeddings):
     """Compute similarity between each chunk and its right neighbor."""
     similarities = []
+    e1 = np.array(embeddings[0]).reshape(1, -1)
     for i in range(len(embeddings) - 1):
-        sim = compute_cosine_similarity(embeddings[i], embeddings[i + 1])
+        e2 = np.array(embeddings[i + 1]).reshape(1, -1)
+        sim = cosine_similarity(e1, e2)[0][0]
         similarities.append(sim)
-    return similarities
-
-def compute_global_similarity(embeddings, num_samples=8, max_iterations=20, tolerance=0.05):
-    """
-    Estimate global similarity by sampling random pairs of non-neighboring chunks.
-    This avoids an O(n^2) computation while reaching a stable average.
-    """
-    prev_avg = 0
-    for _ in range(max_iterations):
-        sample_indices = random.sample(range(len(embeddings)), min(num_samples, len(embeddings)))
-        similarities = [
-            compute_cosine_similarity(embeddings[i], embeddings[j])
-            for i, j in zip(sample_indices[:-1], sample_indices[1:]) if abs(i - j) > 1
-        ]
-        avg_similarity = np.mean(similarities) if similarities else 0
-        if abs(avg_similarity - prev_avg) < tolerance:
-            break
-        prev_avg = avg_similarity
-    return avg_similarity
-
-def merge_chunks(chunks, embeddings, threshold):
-    """
-    Merge neighboring chunks if their similarity exceeds threshold.
-    Each chunk is a tuple (text, metadata) where metadata = {"page": int}.
-    When merging, the resulting metadata 'page' is the minimum of the two.
-    """
-    merged_chunks = []
-    merged_embeddings = []
-    
-    i = 0
-    while i < len(chunks):
-        current_text, current_metadata = chunks[i]
-        current_embedding = embeddings[i]
-        
-        while i < len(embeddings) - 1:
-            next_text, next_metadata = chunks[i + 1]
-            next_similarity = compute_cosine_similarity(current_embedding, embeddings[i + 1])
-            if next_similarity < threshold:
-                break  # Stop merging if similarity is too low
-            
-            # Merge the texts
-            current_text = current_text + " " + next_text
-            # Update embedding by averaging
-            current_embedding = (current_embedding + embeddings[i + 1]) / 2
-            # Update metadata: take the smallest page number, ignoring 0 values
-            current_page = current_metadata["page"]
-            next_page = next_metadata["page"]
-            if current_page == 0:
-                current_page = next_page
-            elif next_page != 0:
-                current_page = min(current_page, next_page)
-            current_metadata = {"page": current_page}
-            i += 1  # Move to the next chunk
-        merged_chunks.append((current_text.strip(), current_metadata))
-        merged_embeddings.append(current_embedding)
-        i += 1  # Move to the next unmerged chunk
-    
-    return merged_chunks, merged_embeddings
+        e1 = e2
+    avg_inter_similarity = np.mean(similarities)
+    return similarities, avg_inter_similarity
 
 def iterative_merging(chunks, model_name="sentence-transformers/all-mpnet-base-v2"):
     """
@@ -154,38 +97,69 @@ def iterative_merging(chunks, model_name="sentence-transformers/all-mpnet-base-v
     Uses SentenceTransformer for computing embeddings.
     Chunks are tuples (text, metadata).
     """
+    average_intra_similarity = 0
+    average_inter_similarity = 1000
     # Extract text for embedding
     texts = [chunk[0] for chunk in chunks]
     model = SentenceTransformer(model_name)
     embeddings = model.encode(texts, convert_to_numpy=True)
-    
-    local_similarities = compute_local_similarities(embeddings)
-    global_similarity = compute_global_similarity(embeddings)
-    avg_local_similarity = np.mean(local_similarities) if local_similarities else 0
-    
-    while True:
-        # Set threshold slightly above average local similarity
-        threshold = avg_local_similarity * 1.05  
-        prev_global_similarity = global_similarity
 
-        new_chunks, new_embeddings = merge_chunks(chunks, embeddings, threshold)
-        
-        new_local_similarities = compute_local_similarities(new_embeddings)
-        new_avg_local_similarity = np.mean(new_local_similarities) if new_local_similarities else 0
-        new_global_similarity = compute_global_similarity(new_embeddings)
-        
-        print(f"Global Sim: {new_global_similarity:.4f}, Avg Local Sim: {new_avg_local_similarity:.4f}, Chunks: {len(new_chunks)}")
-        
-        # Stop if further merging doesn't improve (i.e. increases global similarity)
-        if new_global_similarity >= prev_global_similarity or new_avg_local_similarity >= avg_local_similarity:
-            break
-        else:
-            chunks = new_chunks
-            embeddings = new_embeddings
-            local_similarities = new_local_similarities
-            avg_local_similarity = new_avg_local_similarity
-            global_similarity = new_global_similarity
+    similarities, avg_inter_similarity = compute_similarities(embeddings)
+    print("Initial average inter chunk similarity:", avg_inter_similarity)
+
     
+    similarities_copy = similarities.copy()
+    threshold = 0.95
+    groups = []
+    last_index = 0
+
+    while last_index < len(similarities_copy):  
+        current_group = [last_index]  # Start new group
+        i = last_index  # Track current position
+        
+        # Group chunks based on similarity threshold
+        while i < len(similarities_copy) and similarities_copy[i] > threshold:
+            i += 1  # Move to next similarity entry
+            current_group.append(i)
+        print(f"Last similarity: {similarities_copy[i]}")
+
+        # Compute average embedding for merged chunks
+        average_emb = np.zeros(embeddings.shape[1])
+        for j in current_group:
+            average_emb += embeddings[j]
+        average_emb /= len(current_group)
+
+        # Compute average intra-similarity
+        intra_similarities = [compute_cosine_similarity(embeddings[j], average_emb) for j in current_group]
+        avg_intra_similarity = np.mean(intra_similarities)
+
+        print(f"Average intra-similarity: {avg_intra_similarity}, Group members: {current_group}")
+
+        groups.append((current_group, average_emb, avg_intra_similarity))
+
+        # Move to the next ungrouped index
+        last_index = i + 1  # Skip merged chunks and start a new group
+
+    if last_index < len(embeddings):
+        groups.append(([last_index], embeddings[last_index], 1.0))  # Assume self-similarity = 1.0
+        print(f"Average intra-similarity: 1.0, Group members: [{last_index}]")
+    
+    # Compute inter-similarity between merged chunks (lower is better)
+    new_inter_similarities = []
+    for i in range(len(groups)-1):
+        new_inter_similarities.append(compute_cosine_similarity(groups[i][1], groups[i + 1][1]))
+    new_avg_inter_similarity = np.mean(new_inter_similarities)
+
+    print(f"New average inter-similarity: {new_avg_inter_similarity}")
+    '''
+    new_avg_intra_similarity = 0
+    for i in enumerate(merged):
+        new_avg_intra_similarity += merged[i][2]
+    new_avg_intra_similarity = new_avg_intra_similarity / len(merged)
+
+    print(f"Iteration {i}: Average intra-similarity: {new_avg_intra_similarity}, Average inter-similarity: {new_avg_inter_similarity}")
+
+    '''
     return chunks
 
 def generate_final_embeddings(chunks):
@@ -199,3 +173,25 @@ def generate_final_embeddings(chunks):
     final_embeddings = [hf_embeddings.embed_query(chunk[0]) for chunk in chunks]
     return final_embeddings
 
+def semantic_chunking(file_path):
+    # Load the source
+    pages = load_pdf(file_path)
+    chunks = split_text(pages)
+    print(f"Loaded {len(chunks)} chunks from {file_path}.")
+    
+    # Generate embeddings
+    final_chunks = iterative_merging(chunks)
+    final_chunks_embeddings = generate_final_embeddings(final_chunks)
+    print(f"Generated embeddings for {len(final_chunks)} chunks.")
+    
+    # Prepare documents for MongoDB
+    documents = []
+    for (text, metadata), embedding in zip(final_chunks, final_chunks_embeddings):
+        doc = {
+            "text": text,
+            "embedding": embedding,
+            "metadata": metadata  # Stores page number and other relevant metadata
+        }
+        documents.append(doc)
+    
+    return documents
