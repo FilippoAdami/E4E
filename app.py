@@ -20,10 +20,10 @@ def upload_documents(file_path):
     documents = utils.semantic_chunking(file_path)
     
     # Clear previous data and insert new
-    #print("Clearing existing documents in the collection...")
-    #collection.delete_many({})
-    #collection.insert_many(documents)
-    #print(f"Uploaded {len(documents)} chunks to MongoDB.")
+    print("Clearing existing documents in the collection...")
+    collection.delete_many({})
+    collection.insert_many(documents)
+    print(f"Uploaded {len(documents)} chunks to MongoDB.")
 
 def query_documents(query, k=1):
     """Query MongoDB Atlas for relevant chunks."""
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     pdf_path = "./OERs/ML_mod1.1.pdf"
     upload_documents(pdf_path)
     
-    #sample_query = "Explain how beer was connected to religion"
-    #query_documents(sample_query)
+    sample_query = "what maps the world into digital signals?"
+    query_documents(sample_query)

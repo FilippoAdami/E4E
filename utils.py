@@ -3,7 +3,6 @@ This file will contain helper functions for loading, splitting, merging, and emb
 """
 
 import re
-import random
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -24,53 +23,46 @@ def load_pdf(file_path):
         page.page_content = clean_text(page.page_content)
     return pages
 
-def split_text(pages, min_chars=2500):
+def split_text(pages, min_chars=500):
     """
-    Split text into chunks at '.', '\n\n', or after min_chars with overlap.
-    Keeps track of page numbers in the metadata.
-    Each chunk is a tuple: (text, metadata) where metadata = {"page": int}.
-    When a chunk is incomplete (not ending with punctuation), we mark its page as 0 
-    so it can later be merged with the next page's content.
+    Splits text from multiple pages into non-overlapping chunks. Each chunk:
+      - Is at least min_chars characters long (except possibly the last chunk),
+      - Starts at the beginning of a phrase,
+      - Ends at the end of a phrase (i.e. ends with punctuation),
+      - And its metadata 'page' is the number of the page where the chunk begins.
     """
     chunks = []
     current_chunk = ""
-    current_metadata = None
-    page_number = 1  # Track the page number
+    current_page_start = None
+    page_number = 1
 
     for page in pages:
-        text = page.page_content
-        # Split at sentence boundaries or paragraphs
-        sentences = re.split(r'(?<=\.)\s|\n\n', text)
-
-        # If the last chunk was marked as incomplete, merge it with the first sentence of the new page
-        if chunks and chunks[-1][1]["page"] == 0 and sentences:
-            prev_text, _ = chunks.pop()
-            merged_text = prev_text + " " + sentences[0]
-            merged_metadata = {"page": page_number}  # use current page number
-            chunks.append((merged_text.strip(), merged_metadata))
-            sentences = sentences[1:]  # Remove the merged sentence
-
+        # Split at sentence boundaries or paragraph breaks.
+        sentences = re.split(r'(?<=\.)\s|\n\n', page.page_content)
         for sentence in sentences:
-            if current_chunk == "":
-                # Start a new chunk and record its page
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+
+            # Start a new chunk if necessary.
+            if not current_chunk:
                 current_chunk = sentence
-                current_metadata = {"page": page_number}
-            elif len(current_chunk) + len(sentence) < min_chars:
-                current_chunk += " " + sentence
+                current_page_start = page_number
             else:
-                # Save current chunk along with its metadata
-                chunks.append((current_chunk.strip(), current_metadata))
-                current_metadata = {"page": min(current_metadata["page"], page_number)}
-        # End of page: check if the chunk ends with proper punctuation
-        if re.search(r"[.!?](”|')?$", current_chunk.strip()):
-            chunks.append((current_chunk.strip(), current_metadata))
-        else:
-            # Mark as incomplete with page 0 to indicate pending merge
-            chunks.append((current_chunk.strip(), {"page": 0}))
-        current_chunk = ""
-        current_metadata = None
+                current_chunk += " " + sentence
+
+            # If the current chunk is long enough and ends with punctuation, flush it.
+            if len(current_chunk) >= min_chars and re.search(r"[.!?](”|')?$", current_chunk):
+                chunks.append((current_chunk, {"page": current_page_start}))
+                current_chunk = ""
+                current_page_start = None
+
         page_number += 1
 
+    # Append any remaining text as the final chunk.
+    if current_chunk:
+        chunks.append((current_chunk, {"page": current_page_start}))
+ 
     return chunks
 
 def compute_cosine_similarity(e1, e2):
@@ -81,6 +73,7 @@ def compute_cosine_similarity(e1, e2):
 
 def compute_similarities(embeddings):
     """Compute similarity between each chunk and its right neighbor."""
+    #print(f"length of embeddings:", len(embeddings))
     similarities = []
     e1 = np.array(embeddings[0]).reshape(1, -1)
     for i in range(len(embeddings) - 1):
@@ -89,6 +82,7 @@ def compute_similarities(embeddings):
         similarities.append(sim)
         e1 = e2
     avg_inter_similarity = np.mean(similarities)
+    #print(f"Length of similarities: ", len(similarities))
     return similarities, avg_inter_similarity
 
 def iterative_merging(chunks, model_name="sentence-transformers/all-mpnet-base-v2"):
@@ -97,69 +91,84 @@ def iterative_merging(chunks, model_name="sentence-transformers/all-mpnet-base-v
     Uses SentenceTransformer for computing embeddings.
     Chunks are tuples (text, metadata).
     """
-    average_intra_similarity = 0
-    average_inter_similarity = 1000
     # Extract text for embedding
     texts = [chunk[0] for chunk in chunks]
     model = SentenceTransformer(model_name)
     embeddings = model.encode(texts, convert_to_numpy=True)
-
     similarities, avg_inter_similarity = compute_similarities(embeddings)
     print("Initial average inter chunk similarity:", avg_inter_similarity)
 
-    
-    similarities_copy = similarities.copy()
-    threshold = 0.95
     groups = []
-    last_index = 0
+    threshold = 0.95
+    average_silhouette = 0
 
-    while last_index < len(similarities_copy):  
-        current_group = [last_index]  # Start new group
-        i = last_index  # Track current position
-        
-        # Group chunks based on similarity threshold
-        while i < len(similarities_copy) and similarities_copy[i] > threshold:
-            i += 1  # Move to next similarity entry
+    while len(groups) != 1 and threshold > 0.6:
+        last_index = 0
+        valid_groups = 0
+
+        while last_index <= len(similarities):  
+            i = last_index  # Track current position
+            current_group = []  # Start new group
             current_group.append(i)
-        print(f"Last similarity: {similarities_copy[i]}")
+            
+            # Group chunks based on similarity threshold
+            while i < len(similarities) and similarities[i] > threshold:
+                i += 1  # Move to next similarity entry
+                current_group.append(i)
 
-        # Compute average embedding for merged chunks
-        average_emb = np.zeros(embeddings.shape[1])
-        for j in current_group:
-            average_emb += embeddings[j]
-        average_emb /= len(current_group)
+            # Compute average embedding for merged chunks
+            complete_text = "".join(chunks[elem][0] for elem in current_group)
+            if len(current_group) > 1:
+                merged_emb = model.encode(complete_text, convert_to_numpy=True)
+            else:
+                merged_emb = embeddings[current_group[0]]
+            new_chunk = (complete_text, {"page": chunks[current_group[0]][1]['page']})
 
-        # Compute average intra-similarity
-        intra_similarities = [compute_cosine_similarity(embeddings[j], average_emb) for j in current_group]
-        avg_intra_similarity = np.mean(intra_similarities)
+            # Compute average intra-similarity
+            if len(current_group) > 1:
+                intra_similarities = [compute_cosine_similarity(embeddings[j], merged_emb) for j in current_group]
+                avg_intra_similarity = np.mean(intra_similarities)
+                valid_groups += 1
+            else:
+                avg_intra_similarity = 0.0
 
-        print(f"Average intra-similarity: {avg_intra_similarity}, Group members: {current_group}")
+            print(f"Average intra-similarity: {avg_intra_similarity}, Group members: {current_group}")
+            print(f"Last similarity: {similarities[i]}" if i < len(similarities) else "none")
 
-        groups.append((current_group, average_emb, avg_intra_similarity))
+            groups.append((current_group, new_chunk, merged_emb, avg_intra_similarity))
 
-        # Move to the next ungrouped index
-        last_index = i + 1  # Skip merged chunks and start a new group
+            # Move to the next ungrouped index
+            last_index = i + 1  # Skip merged chunks and start a new group
 
-    if last_index < len(embeddings):
-        groups.append(([last_index], embeddings[last_index], 1.0))  # Assume self-similarity = 1.0
-        print(f"Average intra-similarity: 1.0, Group members: [{last_index}]")
-    
-    # Compute inter-similarity between merged chunks (lower is better)
-    new_inter_similarities = []
-    for i in range(len(groups)-1):
-        new_inter_similarities.append(compute_cosine_similarity(groups[i][1], groups[i + 1][1]))
-    new_avg_inter_similarity = np.mean(new_inter_similarities)
+        # Compute inter-similarity between merged chunks (lower is better)
+        new_inter_similarities = []
+        for i in range(len(groups)-1):
+            new_inter_similarities.append(compute_cosine_similarity(groups[i][2], groups[i + 1][2]))
+        new_avg_inter_similarity = np.mean(new_inter_similarities)
+        print(f"New average inter-similarity: {new_avg_inter_similarity}, within {len(new_inter_similarities)} groups")
 
-    print(f"New average inter-similarity: {new_avg_inter_similarity}")
-    '''
-    new_avg_intra_similarity = 0
-    for i in enumerate(merged):
-        new_avg_intra_similarity += merged[i][2]
-    new_avg_intra_similarity = new_avg_intra_similarity / len(merged)
+        # Compute average intra-similarity within chunks (higher is better)
+        if valid_groups == 0:
+            new_avg_intra_similarity = 0
+        else:
+            new_avg_intra_similarity = sum(group[3] for group in groups) 
+            new_avg_intra_similarity /= valid_groups
+        print(f"New average intra-similarity: {new_avg_intra_similarity} for {valid_groups} groups")
 
-    print(f"Iteration {i}: Average intra-similarity: {new_avg_intra_similarity}, Average inter-similarity: {new_avg_inter_similarity}")
+        if new_avg_intra_similarity !=0:
+            new_average_silhouette = (new_avg_intra_similarity - new_avg_inter_similarity) / max(new_avg_intra_similarity, new_avg_inter_similarity)
+            if new_average_silhouette <= average_silhouette:
+                print("Average silhouette did not improve.")
+                break
+            else:
+                print(f"Average silhouette improved to {new_average_silhouette}")
+        print("-"*50)
+        similarities = new_inter_similarities
+        embeddings = [group[2] for group in groups]
+        chunks = [group[1] for group in groups]
+        groups = []
+        threshold -= 0.1
 
-    '''
     return chunks
 
 def generate_final_embeddings(chunks):
