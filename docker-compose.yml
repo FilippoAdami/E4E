@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  upload-service:
+    build: ./services/upload
+    env_file:
+      - .env
+    volumes:
+      - ./services/upload:/app
+    networks:
+      - e4e_network
+
+networks:
+  e4e_network:
+    driver: bridge
+
+# run with docker-compose up --build

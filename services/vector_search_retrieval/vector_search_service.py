@@ -1,29 +1,12 @@
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import utils
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../common')))
+from mongodb_connection import get_mongo_collection
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# Load environment variables
-load_dotenv()
-
-# Connect to MongoDB Atlas
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client.edu_db
-collection = db.materials
-
-def upload_documents(file_path):
-    """Upload a PDF to MongoDB Atlas with embeddings."""
-    print(f"Uploading {file_path} to MongoDB Atlas...")
-    
-    documents = utils.semantic_chunking(file_path)
-    
-    # Clear previous data and insert new
-    print("Clearing existing documents in the collection...")
-    collection.delete_many({})
-    collection.insert_many(documents)
-    print(f"Uploaded {len(documents)} chunks to MongoDB.")
+# Get the collection from the 'resources' database
+collection = get_mongo_collection("edu_db", "materials")
 
 def query_documents(query, k=1):
     """Query MongoDB Atlas for relevant chunks."""
@@ -53,9 +36,7 @@ def query_documents(query, k=1):
     except Exception as e:
         print(f"Error during search: {e}")
 
-if __name__ == "__main__":
-    pdf_path = "./OERs/ML_mod1.1.pdf"
-    upload_documents(pdf_path)
-    
+
+if __name__ == "__main__":    
     sample_query = "what maps the world into digital signals?"
     query_documents(sample_query)
