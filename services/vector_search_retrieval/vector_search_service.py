@@ -1,17 +1,14 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../common')))
-from mongodb_connection import get_mongo_collection
+from common.mongodb_connection import get_mongo_collection
+
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# Get the collection from the 'resources' database
-collection = get_mongo_collection("edu_db", "materials")
-
-def query_documents(query, k=1):
+def query_documents(query, uri, db_name, collection_name, k=1):
     """Query MongoDB Atlas for relevant chunks."""
     print(f"Querying for: {query}")
-    
+    # Connect to MongoDB
+    collection = get_mongo_collection(db_name, collection_name, uri)
+   
     # Initialize vector store
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     vector_store = MongoDBAtlasVectorSearch(
@@ -36,7 +33,4 @@ def query_documents(query, k=1):
     except Exception as e:
         print(f"Error during search: {e}")
 
-
-if __name__ == "__main__":    
-    sample_query = "what maps the world into digital signals?"
-    query_documents(sample_query)
+    return results

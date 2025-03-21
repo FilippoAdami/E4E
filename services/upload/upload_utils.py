@@ -21,6 +21,7 @@ def load_pdf(file_path):
     pages = loader.load()
     for page in pages:
         page.page_content = clean_text(page.page_content)
+    print(f"read {len(pages)} pages from {file_path}")
     return pages
 
 def split_text(pages, min_chars=500):
@@ -190,6 +191,7 @@ def semantic_chunking(file_path):
     
     # Generate embeddings
     final_chunks = iterative_merging(chunks)
+    print(f"Merged into {len(final_chunks)} chunks.")
     final_chunks_embeddings = generate_final_embeddings(final_chunks)
     print(f"Generated embeddings for {len(final_chunks)} chunks.")
     
