@@ -15,8 +15,8 @@ services = [
 
 # Create FastAPI app
 app = FastAPI(
-    title="E4E API",
-    description="API for E4E services",
+    title="E4E APIs",
+    description="APIs for E4E services",
     version="0.1.0"
 )
 

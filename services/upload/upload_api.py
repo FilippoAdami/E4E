@@ -7,7 +7,9 @@ import os
 router = APIRouter(
     prefix="/upload",
     tags=["upload"],
-    responses={404: {"description": "Not found"}},
+    responses={ 400: {"description": "Bad Request"},
+                404: {"description": "Not found"},
+                500: {"description": "Internal Server Error"}},
 )
 
 class UploadRequest(BaseModel):
@@ -46,7 +48,10 @@ async def upload_file(request: UploadRequest):
         if result == 0:
             result = "Upload successful."
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if hasattr(e, "status_code"):
+            raise HTTPException(status_code=e.status_code, detail=str(e))
+        else:
+            raise RuntimeError(f"Unexpected error: {e}")
 
     return UploadResponse(results=result)
 

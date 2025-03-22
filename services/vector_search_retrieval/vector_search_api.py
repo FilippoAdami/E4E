@@ -22,7 +22,8 @@ class QueryResult(BaseModel):
     content: str  # Extracted page content
 
 class QueryResponse(BaseModel):
-    results: List[QueryResult]  # List of results with metadata and content
+    result: str
+    search_results: List[QueryResult]  # List of results with metadata and content
 
 @router.post("/query", response_model=QueryResponse)
 async def query_vector_search(request: QueryRequest):
@@ -34,8 +35,8 @@ async def query_vector_search(request: QueryRequest):
     - **db_name**: Database name
     - **collection_name**: Collection name
     """
-    if not request.query:
-        raise HTTPException(status_code=400, detail="Query must be provided")
+    if not request.query or len(request.query)<11:
+        raise HTTPException(status_code=400, detail="Query is too short, please contextualize more.")
     
     # Fallback to environment variables if empty
     if not request.uri or not request.db_name or not request.collection_name or request.uri == "" or request.db_name == "" or request.collection_name == "":
@@ -57,9 +58,12 @@ async def query_vector_search(request: QueryRequest):
             for doc in results
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if hasattr(e, "status_code"):
+            raise HTTPException(status_code=e.status_code, detail=str(e))
+        else:
+            raise RuntimeError(f"Unexpected error: {e}")
 
-    return QueryResponse(results=extracted_results)
+    return QueryResponse(result = "Query successful.", search_results=extracted_results)
 
 def include_router(app: FastAPI):
     app.include_router(router)

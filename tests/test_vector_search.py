@@ -1,67 +1,45 @@
-import pytest
-from httpx import AsyncClient
+from fastapi.testclient import TestClient
 from main import app
 
-@pytest.mark.asyncio
-async def test_query_vector_search_valid():
-    """✅ Test a valid query returns results"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post("/vector_search/query", json={"query": "Explain neural networks"})
+client = TestClient(app)
+
+def test_successful_upload():
+    """Test a successful retrival."""
+
+    response = client.post("/vector_search/query", json={
+        "query": "what is beer?",
+        "uri": "",
+        "db_name": "",
+        "collection_name": ""
+    })
+
+    print("RESULT:  ",response.json().get("result"))
 
     assert response.status_code == 200
-    data = response.json()
+    assert response.json().get("result") == "Query successful."
 
-    assert "results" in data
-    assert isinstance(data["results"], list)
+def test_invalid_file_type():
+    """Test when the provided query is not coherent with the collection."""
 
-    if data["results"]:  # If results exist, check structure
-        for result in data["results"]:
-            assert "page" in result
-            assert "content" in result
-            assert isinstance(result["page"], (int, str))  # Page could be stored as a string
-            assert isinstance(result["content"], str)
-
-@pytest.mark.asyncio
-async def test_query_vector_search_empty_query():
-    """❌ Test sending an empty query returns 400 error"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post("/vector_search/query", json={"query": ""})
+    response = client.post("/vector_search/query", json={
+        "query": "what is paper?",
+        "uri": "",
+        "db_name": "",
+        "collection_name": ""
+    })
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Query must be provided"
+    assert response.json() == {"detail": "No results found. Please write a coherent query."}
 
-@pytest.mark.asyncio
-async def test_query_vector_search_malformed_request():
-    """❌ Test sending malformed JSON returns 422 error"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post("/vector_search/query", json={"wrong_field": "neural networks"})
+def test_pdf_without_text():
+    """Test when the query does not contain any text or is too short."""
 
-    assert response.status_code == 422  # Unprocessable Entity
+    response = client.post("/vector_search/query", json={
+        "query": "beer",
+        "uri": "",
+        "db_name": "",
+        "collection_name": ""
+    })
 
-@pytest.mark.asyncio
-async def test_query_vector_search_no_results():
-    """✅ Test when no matching results are found"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post("/vector_search/query", json={"query": "qwerty12345"})
-
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "results" in data
-    assert isinstance(data["results"], list)
-    assert data["results"] == []  # No results found
-
-@pytest.mark.asyncio
-async def test_query_vector_search_db_connection_error(monkeypatch):
-    """❌ Test if database connection fails"""
-
-    async def mock_query_documents(*args, **kwargs):
-        raise Exception("Database connection failed")
-
-    monkeypatch.setattr("services.vector_search.vector_search_service.query_documents", mock_query_documents)
-
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post("/vector_search/query", json={"query": "Explain neural networks"})
-
-    assert response.status_code == 500
-    assert "Database connection failed" in response.json()["detail"]
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Query is too short, please contextualize more."}

@@ -19,6 +19,11 @@ def load_pdf(file_path):
     """Load a PDF and clean text per page."""
     loader = PyPDFLoader(file_path)
     pages = loader.load()
+    if len(pages) == 0:
+        error = Exception(f"Document is empty")
+        error.status_code = 400
+        raise error
+    
     for page in pages:
         page.page_content = clean_text(page.page_content)
     print(f"read {len(pages)} pages from {file_path}")
@@ -185,13 +190,27 @@ def generate_final_embeddings(chunks):
 
 def semantic_chunking(file_path):
     # Load the source
-    pages = load_pdf(file_path)
+    try:
+        pages = load_pdf(file_path)
+    except Exception as e:
+        raise
     chunks = split_text(pages)
     print(f"Loaded {len(chunks)} chunks from {file_path}.")
     
     # Generate embeddings
-    final_chunks = iterative_merging(chunks)
-    print(f"Merged into {len(final_chunks)} chunks.")
+    if len(chunks) == 0:
+        error = Exception(f"Document is empty")
+        error.status_code = 400
+        raise error
+    if len(chunks) >1:
+        final_chunks = iterative_merging(chunks)
+        print(f"Merged into {len(final_chunks)} chunks.")
+    else:
+        final_chunks = chunks
+    if len(final_chunks) < 2:
+        error = Exception("Document is too short.")
+        error.status_code = 400
+        raise error
     final_chunks_embeddings = generate_final_embeddings(final_chunks)
     print(f"Generated embeddings for {len(final_chunks)} chunks.")
     

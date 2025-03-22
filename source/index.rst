@@ -16,4 +16,5 @@ documentation for details.
    :caption: Contents:
 
    common.md
-
+   apis/upload.md
+   apis/vector_search.md
