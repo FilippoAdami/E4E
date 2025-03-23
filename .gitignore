@@ -7,3 +7,5 @@
 /tests/.pytest_cache
 /tests/__pycache__
 /source/_build
+/Controllers
+/Models

@@ -1,16 +1,9 @@
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from .upload_service import upload_documents
+from common.auth import authenticate
 from dotenv import load_dotenv
 import os
-
-router = APIRouter(
-    prefix="/upload",
-    tags=["upload"],
-    responses={ 400: {"description": "Bad Request"},
-                404: {"description": "Not found"},
-                500: {"description": "Internal Server Error"}},
-)
 
 class UploadRequest(BaseModel):
     file: str
@@ -21,8 +14,17 @@ class UploadRequest(BaseModel):
 class UploadResponse(BaseModel):
     results: str
 
+router = APIRouter(
+    prefix="/embeddings",
+    tags=["upload"],
+    responses={ 400: {"description": "Bad Request"},
+                401: {"description": "Unauthorized"},
+                404: {"description": "Not found"},
+                500: {"description": "Internal Server Error"}},
+)
+
 @router.post("/upload", response_model=UploadResponse)
-async def upload_file(request: UploadRequest):
+async def upload_file( request: UploadRequest, access_key: str = Header(...) ):
     """
     Upload a file (by path) and perform semantic chunking.
 
@@ -31,18 +33,20 @@ async def upload_file(request: UploadRequest):
     - **db_name**: Database name
     - **collection_name**: Collection name
     """
-    if not request.file.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+    try: 
+        authenticate(access_key)
 
-    # Fallback to environment variables if empty
-    if not request.uri or not request.db_name or not request.collection_name or request.uri == "" or request.db_name == "" or request.collection_name == "":
-        print("Using environment variables for MongoDB connection details...")
-        load_dotenv()
-        request.uri = os.getenv("MONGO_URI", "")
-        request.db_name = "edu_db"
-        request.collection_name = "materials"
+        if not request.file.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Only PDF files are accepted")
 
-    try:
+        # Fallback to environment variables if empty
+        if not request.uri or not request.db_name or not request.collection_name or request.uri == "" or request.db_name == "" or request.collection_name == "":
+            print("Using environment variables for MongoDB connection details...")
+            load_dotenv()
+            request.uri = os.getenv("MONGO_URI", "")
+            request.db_name = "edu_db"
+            request.collection_name = "materials"
+
         # Ensure upload_documents is async, or remove await
         result = upload_documents(request.file, request.uri, request.db_name, request.collection_name)
         if result == 0:

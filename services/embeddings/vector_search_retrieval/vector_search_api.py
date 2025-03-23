@@ -1,15 +1,10 @@
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from typing import List
 from .vector_search_service import query_documents
+from common.auth import authenticate
 from dotenv import load_dotenv
 import os
-
-router = APIRouter(
-    prefix="/vector_search",
-    tags=["vector_search"],
-    responses={404: {"description": "Not found"}},
-)
 
 class QueryRequest(BaseModel):
     query: str
@@ -25,8 +20,17 @@ class QueryResponse(BaseModel):
     result: str
     search_results: List[QueryResult]  # List of results with metadata and content
 
+router = APIRouter(
+    prefix="/embeddings",
+    tags=["vector_search"],
+    responses={ 400: {"description": "Bad Request"},
+                401: {"description": "Unauthorized"},
+                404: {"description": "Not found"},
+                500: {"description": "Internal Server Error"}},
+)
+
 @router.post("/query", response_model=QueryResponse)
-async def query_vector_search(request: QueryRequest):
+async def query_vector_search(request: QueryRequest, access_key: str = Header(...) ):
     """
     Query a collection about a specific topic.
 
@@ -35,19 +39,20 @@ async def query_vector_search(request: QueryRequest):
     - **db_name**: Database name
     - **collection_name**: Collection name
     """
-    if not request.query or len(request.query)<11:
-        raise HTTPException(status_code=400, detail="Query is too short, please contextualize more.")
-    
-    # Fallback to environment variables if empty
-    if not request.uri or not request.db_name or not request.collection_name or request.uri == "" or request.db_name == "" or request.collection_name == "":
-        print("Using environment variables for MongoDB connection details...")
-        load_dotenv()
-        request.uri = os.getenv("MONGO_URI", "")
-        request.db_name = "edu_db"
-        request.collection_name = "materials"
-
     try:
-        # Ensure query_documents is awaited if it's an async function
+        authenticate(access_key)
+        
+        if not request.query or len(request.query)<11:
+            raise HTTPException(status_code=400, detail="Query is too short, please contextualize more.")
+        
+        # Fallback to environment variables if empty
+        if not request.uri or not request.db_name or not request.collection_name or request.uri == "" or request.db_name == "" or request.collection_name == "":
+            print("Using environment variables for MongoDB connection details...")
+            load_dotenv()
+            request.uri = os.getenv("MONGO_URI", "")
+            request.db_name = "edu_db"
+            request.collection_name = "materials"
+
         results = query_documents(request.query, request.uri, request.db_name, request.collection_name)
         # Extract structured data: page number and content
         extracted_results = [

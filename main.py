@@ -4,11 +4,11 @@ import importlib
 
 # List of service modules (you can automate this discovery)
 services = [
-    "services.upload.upload_api",
-    "services.vector_search_retrieval.vector_search_api",
+    "services.embeddings.upload.upload_api",
+    "services.embeddings.vector_search_retrieval.vector_search_api",
     #"services.general-retrieval.general_retrieval_api",
     #"services.user-management.user_management_api",
-    #"services.tasks.tasks_api",
+    "services.tasks.summarize.summarize_api",
     #"services.tools.tools_api",
     #"services.agent.agent_api"
 ]
