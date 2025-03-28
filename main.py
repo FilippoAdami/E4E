@@ -9,6 +9,8 @@ services = [
     #"services.general-retrieval.general_retrieval_api",
     #"services.user-management.user_management_api",
     "services.tasks.summarize.summarize_api",
+    "services.tasks.translate.translate_api",
+    "services.tasks.plan_lesson.plan_lesson_api",
     #"services.tools.tools_api",
     #"services.agent.agent_api"
 ]

@@ -25,8 +25,7 @@ async def summarize_text( request: SummarizeRequest, access_key: str = Header(..
 
         if len(request.text) < 200:
             raise HTTPException(status_code=400, detail="Text must be at least 200 characters.")
-
-        # Ensure upload_documents is async, or remove await
+        
         result = summary(request.text, request.model, request.style.value, request.education_level.value, request.learning_outcome.value)
 
     except Exception as e:
