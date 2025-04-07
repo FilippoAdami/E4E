@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI, HTTPException, Header
 from common.auth import authenticate
 from .plan_lesson_service import lesson_plan
-from .plan_lesson_utils import PlanLessonRequest, LessonPlan
+from .plan_lesson_utils import PlanLessonRequest, LessonPlanS
 
 router = APIRouter(
     prefix="/tasks",
@@ -12,7 +12,7 @@ router = APIRouter(
                 500: {"description": "Internal Server Error"}},
 )
 
-@router.post("/plan_lesson", response_model=LessonPlan)
+@router.post("/plan_lesson", response_model=LessonPlanS)
 async def plan_lesson( request: PlanLessonRequest, access_key: str = Header(...) ):
     """
     Plan a lesson based on the given request.

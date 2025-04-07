@@ -7,12 +7,14 @@ class Node(BaseModel):
     type: TypeOfActivity
     topic: str
     details: str
+    learning_outcome: LearningOutcome
     duration: int
 
 class NodeS(BaseModel):
     type: str
     topic: str
     details: str
+    learning_outcome: str
     duration: int
 
 class PlanLessonResponse(BaseModel):
@@ -25,10 +27,9 @@ class PlanLessonResponse(BaseModel):
 class Topic(BaseModel):
     topic: str
     explanation: str
-    learning_outcome: LearningOutcome
 
     def __str__(self):
-        return f"{self.topic} - {self.explanation}. Learning Outcome: {self.learning_outcome}"
+        return f"{self.topic} - {self.explanation}."
 
     def to_json(self):
         return self.model_dump()
@@ -46,7 +47,7 @@ class PlanLessonRequest(BaseModel):
     def to_json(self):
         return self.model_dump()
 
-class LessonPlan(BaseModel):
+class LessonPlanS(BaseModel):
     title: str
     macro_subject: str
     education_level: str
@@ -54,6 +55,15 @@ class LessonPlan(BaseModel):
     prerequisites: List[str]
     nodes: List[NodeS]    
     language: str = "English"
+    context: str
+
+class LessonPlan(BaseModel):
+    title: str
+    macro_subject: str
+    education_level: EducationLevel
+    learning_outcome: LearningOutcome
+    prerequisites: List[str]
+    nodes: List[Node]
     context: str
 
 def plan_lesson_prompt(request: PlanLessonRequest):
@@ -70,6 +80,7 @@ Each **node** consists of:
 - **TypeOfActivity**: choose an appropriate **TypeOfActivity** from the list below, balancing between content delivery and more interactive activities.  
 - **Topic**: Select from the provided list.
 - **Details**: Suggest a tailored explanation approach for this audience.  
+- **Learning Outcome**: The desired learning outcome for this specific node. Note that not all the nodes will be about an equally important topic, so balance the learning outcomes accordingly.
 - **Duration**: The minimum time (in minutes) needed for this node.
 
 ### Provided Resources
@@ -78,6 +89,9 @@ Here are the **topics** to be covered:
 
 Here are the available **TypeOfActivity** options:
 {", ".join(e.value for e in TypeOfActivity)}
+
+Here are the available **Learning Outcome** options:
+{", ".join(e.value for e in LearningOutcome)}
 
 ### Prerequisites  
 Now that you know how the lesson will be, list the key **prerequisites** your audience should already be familiar with (keep it concise).  

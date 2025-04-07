@@ -14,7 +14,7 @@ class SummarizeRequest(BaseModel):
 
 def summarize_prompt(text, style=TextStyle.STANDARD, level=EducationLevel.HIGH_SCHOOL, learning_outcome=LearningOutcome.DECLARATIVE):
    prompt = f"""Summarize in a {style} style, and maintaining the same language of the text, the text: '{text}'.
-List the keywords of the text most relevant to the topic.
+List the ten keywords most relevant to the topic.
 Summarize the text to make it understandable for a {level} audience that needs to achieve a {learning_outcome} learning outcome on the topic. If the text does not contain enough information to achieve the learning outcome, please integrate the necessary information from your own knowledge and expertiese."""
    return prompt
 

@@ -2,6 +2,7 @@ from google import genai
 from dotenv import load_dotenv
 from .summarize_utils import SummarizeResponse, summarize_prompt
 from ..common_enums import TextStyle, EducationLevel, LearningOutcome
+from ...llm_integration.gemini import GeminiLLM
 import os
 
 load_dotenv()
@@ -11,17 +12,14 @@ client = genai.Client(api_key=API_KEY)
 
 def summary(text, model=None, style=TextStyle.STANDARD, education_level=EducationLevel.HIGH_SCHOOL, learning_outcome=LearningOutcome.DECLARATIVE):
     if model is None:
-        model = "gemini-2.0-flash"
+        model = "GEMINI"
+    if model.capitalize() == "GEMINI":
+        llm = GeminiLLM()
+    else:
+        llm = GeminiLLM()
     try:
-        response = client.models.generate_content(
-            model=model,
-            contents= summarize_prompt(text, style, education_level, learning_outcome),
-            config={
-                'response_mime_type': 'application/json',
-                'response_schema': SummarizeResponse,
-            }
-        )
+        response = llm.generate_json(prompt=summarize_prompt(text, style, education_level, learning_outcome), response_model=SummarizeResponse)
     except Exception as e:
         print(f"Error during summarization: {e}")
         raise
-    return response.parsed
+    return response

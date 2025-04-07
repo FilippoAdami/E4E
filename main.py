@@ -11,6 +11,7 @@ services = [
     "services.tasks.summarize.summarize_api",
     "services.tasks.translate.translate_api",
     "services.tasks.plan_lesson.plan_lesson_api",
+    "services.tasks.plan_course.plan_course_api",
     #"services.tools.tools_api",
     #"services.agent.agent_api"
 ]

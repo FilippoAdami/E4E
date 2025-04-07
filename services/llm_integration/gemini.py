@@ -99,7 +99,6 @@ class GeminiLLM(LLMInterface):
                     #frequency_penalty=0.0,
                     ),
             )
-            print(response)
             return response.parsed
         except Exception as e:
             print(f"Error generating JSON with Gemini: {e}")
