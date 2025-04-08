@@ -6,14 +6,11 @@ import importlib
 services = [
     "services.embeddings.upload.upload_api",
     "services.embeddings.vector_search_retrieval.vector_search_api",
-    #"services.general-retrieval.general_retrieval_api",
-    #"services.user-management.user_management_api",
     "services.tasks.summarize.summarize_api",
     "services.tasks.translate.translate_api",
     "services.tasks.plan_lesson.plan_lesson_api",
     "services.tasks.plan_course.plan_course_api",
-    #"services.tools.tools_api",
-    #"services.agent.agent_api"
+    "services.tasks.generate_material.generate_material_api",
 ]
 
 # Create FastAPI app

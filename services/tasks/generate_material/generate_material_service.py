@@ -1,6 +1,6 @@
 from google import genai
 from dotenv import load_dotenv
-from .plan_course_utils import PlanCourseRequest, PlanCourseResponse, CoursePlan, plan_course_prompt
+from .generate_material_utils import GenerateMaterialRequest, GenerateMaterialResponse, Material, generate_material_prompt
 from ...llm_integration.gemini import GeminiLLM
 import os
 
@@ -9,7 +9,7 @@ API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 client = genai.Client(api_key=API_KEY)
 
-def course_plan(request: PlanCourseRequest):
+def material(request: GenerateMaterialRequest):
     model = request.model
     if model is None:
         model = "GEMINI"
@@ -18,22 +18,24 @@ def course_plan(request: PlanCourseRequest):
     else:
         llm = GeminiLLM()
     try:
-        response: PlanCourseResponse = llm.generate_json(prompt=plan_course_prompt(request), response_model=PlanCourseResponse)
+        #print("Prompt: ",generate_material_prompt(request))
+        #print("-"*100)
+        #print("\n\n\n")
+        response: GenerateMaterialResponse = llm.generate_json(prompt=generate_material_prompt(request), response_model=GenerateMaterialResponse)
         #print("Response",response)
-        #print("-"*50)
+        #print("-"*100)
 
-        final = CoursePlan(
+        final = Material(
             title=request.title,
             macro_subject=request.macro_subject,
+            topics=request.topics,
             education_level=request.education_level,
             learning_outcome=request.learning_outcome,
-            number_of_lessons=request.number_of_lessons,
-            duration_of_lesson=request.duration_of_lesson,
-            prerequisites=response.prerequisites,
-            nodes=response.nodes,
-            language=request.language
+            duration=request.duration,
+            material=response.material,
+            language=request.language,
         )
-   
+
     except Exception as e:
         raise
 

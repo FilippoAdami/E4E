@@ -10,26 +10,19 @@ class Node(BaseModel):
     learning_outcome: LearningOutcome
     duration: int
 
-class NodeS(BaseModel):
-    type: str
-    topic: str
-    details: str
-    learning_outcome: str
-    duration: int
-
-class PlanLessonResponse(BaseModel):
-    nodes: List[Node]
-    prerequisites: List[str]
-
-    def to_json(self):
-        return self.model_dump()
-
 class Topic(BaseModel):
     topic: str
     explanation: str
 
     def __str__(self):
         return f"{self.topic} - {self.explanation}."
+
+    def to_json(self):
+        return self.model_dump()
+
+class PlanLessonResponse(BaseModel):
+    nodes: List[Node]
+    prerequisites: List[str]
 
     def to_json(self):
         return self.model_dump()
@@ -47,16 +40,6 @@ class PlanLessonRequest(BaseModel):
     def to_json(self):
         return self.model_dump()
 
-class LessonPlanS(BaseModel):
-    title: str
-    macro_subject: str
-    education_level: str
-    learning_outcome: str
-    prerequisites: List[str]
-    nodes: List[NodeS]    
-    language: str = "English"
-    context: str
-
 class LessonPlan(BaseModel):
     title: str
     macro_subject: str
@@ -65,9 +48,10 @@ class LessonPlan(BaseModel):
     prerequisites: List[str]
     nodes: List[Node]
     context: str
+    language: str = "English"
 
 def plan_lesson_prompt(request: PlanLessonRequest):
-   prompt = f"""You are an expert educator and instructional designer specialized in {request.macro_subject}. 
+   prompt = f"""You are an {request.language} expert educator and instructional designer specialized in {request.macro_subject}. 
 Your expertise lies in creating **structured, engaging, and pedagogically sound lesson plans**. 
 
 ### Task
@@ -77,10 +61,10 @@ The **main goal** is to help the audience achieve: **'{request.learning_outcome}
 ### Lesson Plan Structure
 Since you are highly organized, you will structure the lesson as a **logical sequence of nodes**, ensuring an effective balance between instruction and engagement.  
 Each **node** consists of:  
-- **TypeOfActivity**: choose an appropriate **TypeOfActivity** from the list below, balancing between content delivery and more interactive activities.  
-- **Topic**: Select from the provided list.
-- **Details**: Suggest a tailored explanation approach for this audience.  
-- **Learning Outcome**: The desired learning outcome for this specific node. Note that not all the nodes will be about an equally important topic, so balance the learning outcomes accordingly.
+- **TypeOfActivity** (in English, from the provided options): choose an appropriate **TypeOfActivity** from the list below, balancing between content delivery and more interactive activities.  
+- **Topic** (in {request.language}): Select from the provided list.
+- **Details** (in {request.language}): Suggest a tailored approach for this audience.  
+- **Learning Outcome** (in English, from the provided options): The desired learning outcome for this specific node. Note that not all the nodes will be about an equally important topic, so balance the learning outcomes accordingly.
 - **Duration**: The minimum time (in minutes) needed for this node.
 
 ### Provided Resources
@@ -94,7 +78,7 @@ Here are the available **Learning Outcome** options:
 {", ".join(e.value for e in LearningOutcome)}
 
 ### Prerequisites  
-Now that you know how the lesson will be, list the key **prerequisites** your audience should already be familiar with (keep it concise).  
+Now that you know how the lesson will be, list the key **prerequisites** (in {request.language}) your audience should already be familiar with (keep it concise).  
 """
    return prompt
 
@@ -144,6 +128,55 @@ Now that you know how the lesson will be, list the key **prerequisites** your au
   "education_level": "elementary school",
   "context": "very easily distracted, but responds well to playful and interactive lessons",
   "model": "gemini-2.0-flash"
+}
+
+
+
+{
+  "topics": [
+    {
+      "topic": "Chi erano i Romani?",
+      "explanation": "I Romani erano persone che vivevano nella città di Roma e costruirono un enorme impero in Europa, Africa e Asia.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "L'esercito romano",
+      "explanation": "I soldati romani, chiamati legionari, indossavano armature, portavano scudi e marciavano in formazioni compatte.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "Le strade romane",
+      "explanation": "I Romani costruivano strade dritte e solide affinché soldati e mercanti potessero viaggiare facilmente in tutto l’impero.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "I gladiatori e il Colosseo",
+      "explanation": "I gladiatori erano combattenti che intrattenevano il pubblico in grandi arene come il Colosseo lottando tra loro o contro animali selvaggi.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "Dei e miti romani",
+      "explanation": "I Romani credevano in molti dei come Giove, Marte e Venere e raccontavano miti avvincenti su di loro.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "La vita quotidiana nell'antica Roma",
+      "explanation": "I Romani vivevano in case, andavano al mercato e mangiavano cibi come pane, formaggio e olive.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    },
+    {
+      "topic": "La caduta dell’Impero Romano",
+      "explanation": "L’Impero Romano divenne troppo grande per essere controllato e alla fine cadde a causa di attacchi, leader deboli e altri problemi.",
+      "learning_outcome": "the ability to recall or recognize simple facts and definitions"
+    }
+  ],
+  "learning_outcome": "the ability to recall or recognize simple facts and definitions",
+  "language": "Italiano",
+  "macro_subject": "Storia",
+  "title": "L’Impero Romano",
+  "education_level": "elementary school",
+  "context": "molto facilmente distratto, ma risponde bene a lezioni giocose e interattive",
+  "model": "gemini"
 }
 """
 

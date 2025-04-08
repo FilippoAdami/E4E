@@ -9,11 +9,6 @@ class LessonNode(BaseModel):
     learning_outcome: LearningOutcome
     topics: list[Topic]
 
-class LessonNodeS(BaseModel):
-    title: str
-    learning_outcome: str
-    topics: list[Topic]
-
 class PlanCourseRequest(BaseModel):
     title: str
     macro_subject: str
@@ -40,20 +35,11 @@ class CoursePlan(BaseModel):
     duration_of_lesson: int
     prerequisites: List[str]
     nodes: List[LessonNode]
-
-class CoursePlanS(BaseModel):
-    title: str
-    macro_subject: str
-    education_level: str
-    learning_outcome: str
-    number_of_lessons: int
-    duration_of_lesson: int
-    prerequisites: List[str]
-    nodes: List[LessonNodeS]
     language: str = "English"
 
+
 def plan_course_prompt(request: PlanCourseRequest):
-   prompt = f"""You are an expert educator and instructional designer specialized in {request.macro_subject}. 
+   prompt = f"""You are an expert {request.language} educator and instructional designer specialized in {request.macro_subject}. 
 Your expertise lies in creating **structured, engaging, and pedagogically sound course plans**. 
 
 ### Task
@@ -63,11 +49,11 @@ The **main goal** is to help the audience achieve: **'{request.learning_outcome.
 ### Course Plan Structure
 Since you are highly organized, you will structure the course as a **logical sequence of {request.number_of_lessons} lessons**.
 Each **lesson** consists of:
-- **Title**: the general topic of the lesson, 
-- **Learning Outcome**: desired learning outcome for the main topic of the lesson. (Note that not all the lessons will be about an equally important topic, so balance the learning outcomes accordingly.)
+- **Title** (in {request.language}): the general topic of the lesson, 
+- **Learning Outcome** (in English from the list): desired learning outcome for the main topic of the lesson. (Note that not all the lessons will be about an equally important topic, so balance the learning outcomes accordingly.)
 - **Topics**: the specific topics covered in the lesson, each topic is composed of:
-    - **Topic**: Title of the specific topic.
-    - **Explanation**: More detailed description of the topic.
+    - **Topic** (in {request.language}): Title of the specific topic.
+    - **Explanation** (in {request.language}): More detailed description of the topic.
 
   Here are the available **Learning Outcome** options:
   {", ".join(e.value for e in LearningOutcome)}
@@ -75,7 +61,7 @@ Each **lesson** consists of:
 Each of the {request.number_of_lessons} lessons should have an approximate duration of {request.duration_of_lesson} minutes, so adjust the number and difficulty of the topics acccordingly.
 
 ### Prerequisites  
-Now that you know how the course will be, list the key **prerequisites** your audience should already be familiar with (keep it concise).  
+Now that you know how the course will be, list the key **prerequisites** (in {request.language}) your audience should already be familiar with (keep it concise).  
 """
    return prompt
 
