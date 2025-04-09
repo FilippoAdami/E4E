@@ -38,7 +38,7 @@ class Material(BaseModel):
     language: str = "English"
 
 def generate_material_prompt(request: GenerateMaterialRequest):
-   prompt = f"""You are an expert educator and instructional designer specialized in {request.macro_subject}. 
+   prompt = f"""You are an {request.language} expert educator and instructional designer specialized in {request.macro_subject}. 
 Your expertise lies in creating **structured, engaging, and pedagogically sound lesson material**. 
 
 ### Task
@@ -51,7 +51,7 @@ These are the ordered topics you will cover:
 {",\n".join([f"- {topic.toStr()}" for topic in request.topics])}
 
 Now you can generate the material (in {request.language}), considering that it should be fully explainable in approximate {request.duration} minutes.
-Remember to use appropriate vocabulary and complexity for a {request.education_level.value} audience and to adjust the depth of the topics acccordingly to their desired learning outcome.
+Remember to use appropriate vocabulary and complexity for a {request.education_level.value} audience and to adjust the depth of the topics acccordingly to the desired learning outcome.
 """
    return prompt
 

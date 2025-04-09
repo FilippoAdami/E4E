@@ -1,4 +1,5 @@
 from enum import Enum
+from pydantic import BaseModel
 
 class TextStyle(Enum):
   SYNTHETIC = "topic / synthetic"
@@ -29,7 +30,7 @@ class TypeOfActivity(Enum):
     OPEN_QUESTION = "open question"
     SHORT_ANSWER_QUESTION = "short answer question"
     TRUE_OR_FALSE = "true or false"
-    INFORMATION_SEARCH = "information search"
+    # INFORMATION_SEARCH = "information search" can be done by using the result of the fill in the blanks activity
     FILL_IN_THE_BLANKS = "fill in the blanks"
     MATCHING = "matching"  
     ORDERING = "ordering"
@@ -37,7 +38,7 @@ class TypeOfActivity(Enum):
     MULTIPLE_SELECT = "multiple select"
     ESSAY = "essay"
     KNOWLEDGE_EXPOSITION = "knowledge exposition"
-    TEXT_COMPREHENSION = "text comprehension"
+    #TEXT_COMPREHENSION = "text comprehension"
     DEBATE = "debate"
     BRAINSTORMING = "brainstorming"
     GROUP_DISCUSSION = "group discussion"
@@ -48,12 +49,12 @@ class TypeOfActivity(Enum):
     CASE_STUDY_ANALYSIS = "case study analysis"
     PROJECT_BASED_LEARNING = "project based learning"
     PROBLEM_SOLVING_ACTIVITY = "problem solving activity"    
-    CONCEPTUAL_MAPS = "conceptual maps"
-    GRAPHS = "graphs"
-    TABLES = "tables"
-    DIAGRAMS = "diagrams"
-    FLOWCHARTS = "flowcharts"
-    TIMELINES = "timelines"
+    #CONCEPTUAL_MAPS = "conceptual maps"
+    #GRAPHS = "graphs"
+    #TABLES = "tables"
+    #DIAGRAMS = "diagrams"
+    #FLOWCHARTS = "flowcharts"
+    #TIMELINES = "timelines"
 
 class ActivityCategory(Enum):
     FILL_IN_THE_BLANKS = "fill in the blanks"
@@ -76,3 +77,11 @@ class TypeOfAssessment(Enum):
     SELF_ASSESSMENT = "self assessment"
     TEACHER_ASSESSMENT = "teacher assessment"
     AUTOMATED_ASSESSMENT = "automated assessment"
+
+class ActivityUtils(BaseModel):
+    category: ActivityCategory
+    goal: str # "assess if the audience achieved " / "help the audience achieve "
+    plus: str
+    solution: str
+    distractors: str
+    easily_discardable_distractors: str

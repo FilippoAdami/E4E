@@ -11,6 +11,7 @@ services = [
     "services.tasks.plan_lesson.plan_lesson_api",
     "services.tasks.plan_course.plan_course_api",
     "services.tasks.generate_material.generate_material_api",
+    "services.tasks.generate_activity.generate_activity_api",
 ]
 
 # Create FastAPI app
