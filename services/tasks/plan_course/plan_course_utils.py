@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from ..common_enums import EducationLevel, LearningOutcome
+from ..common_enums import EducationLevel, LearningOutcome, LearningObjectives
 from ..plan_lesson.plan_lesson_utils import Topic
 from pydantic import BaseModel
 from typing import List
@@ -13,7 +13,7 @@ class PlanCourseRequest(BaseModel):
     title: str
     macro_subject: str
     education_level: EducationLevel
-    learning_outcome: LearningOutcome
+    learning_objectives: LearningObjectives
     number_of_lessons: int
     duration_of_lesson: int
     language: str = "English"
@@ -30,7 +30,7 @@ class CoursePlan(BaseModel):
     title: str
     macro_subject: str
     education_level: EducationLevel
-    learning_outcome: LearningOutcome
+    learning_objectives: LearningObjectives
     number_of_lessons: int
     duration_of_lesson: int
     prerequisites: List[str]
@@ -44,7 +44,7 @@ Your expertise lies in creating **structured, engaging, and pedagogically sound 
 
 ### Task
 Generate a **comprehensive course plan** for the macro_topic: **'{request.title}'**, ensuring it aligns with best teaching practices for a **{request.education_level.value}** audience.  
-The **main goal** is to help the audience achieve: **'{request.learning_outcome.value}'** on the general topic.
+The **main goal** is to help the audience achieve the following learning outcomes: '{request.learning_objectives.toString()}'.
 
 ### Course Plan Structure
 Since you are highly organized, you will structure the course as a **logical sequence of {request.number_of_lessons} lessons**.

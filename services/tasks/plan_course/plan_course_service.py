@@ -26,7 +26,7 @@ def course_plan(request: PlanCourseRequest):
             title=request.title,
             macro_subject=request.macro_subject,
             education_level=request.education_level,
-            learning_outcome=request.learning_outcome,
+            learning_objectives=request.learning_objectives,
             number_of_lessons=request.number_of_lessons,
             duration_of_lesson=request.duration_of_lesson,
             prerequisites=response.prerequisites,

@@ -5,7 +5,7 @@ from .summarize_utils import SummarizeRequest, SummarizeResponse
 
 router = APIRouter(
     prefix="/tasks",
-    tags=["summarize"],
+    tags=["material"],
     responses={ 400: {"description": "Bad Request"},
                 401: {"description": "Unauthorized"},
                 404: {"description": "Not found"},

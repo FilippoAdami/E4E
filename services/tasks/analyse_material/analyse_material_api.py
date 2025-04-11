@@ -1,24 +1,28 @@
 from fastapi import APIRouter, FastAPI, HTTPException, Header
 from common.auth import authenticate
-from .define_syllabus_service import syllabus
-from .define_syllabus_utils import DefineSyllabusRequest, Syllabus
+from .analyse_material_service import analysis
+from .analyse_material_utils import AnalyseMaterialRequest, AnalyseMaterialResponse
 
 router = APIRouter(
     prefix="/tasks",
-    tags=["plan"],
+    tags=["material"],
     responses={ 400: {"description": "Bad Request"},
                 401: {"description": "Unauthorized"},
                 404: {"description": "Not found"},
                 500: {"description": "Internal Server Error"}},
 )
 
-@router.post("/define_syllabus", response_model=Syllabus)
-async def define_syllabus( request: DefineSyllabusRequest, access_key: str = Header(...) ):
+@router.post("/analyse_material", response_model=AnalyseMaterialResponse)
+async def analyse_material( request: AnalyseMaterialRequest, access_key: str = Header(...) ):
     """
     """
     try: 
         authenticate(access_key)
-        result = syllabus(request)
+
+        if len(request.text) < 200:
+            raise HTTPException(status_code=400, detail="Text must be at least 200 characters.")
+        
+        result = analysis(request)
 
     except Exception as e:
         if hasattr(e, "status_code"):

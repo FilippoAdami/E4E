@@ -1,7 +1,13 @@
 from pydantic import BaseModel
-from ..common_enums import EducationLevel, LearningOutcome, TypeOfActivity, ActivityUtils, ActivityCategory
-from ..plan_lesson.plan_lesson_utils import Topic
+from ..common_enums import EducationLevel, LearningOutcome, TypeOfActivity
 from pydantic import BaseModel
+
+class ActivityUtils(BaseModel):
+    goal: str # "assess if the audience achieved " / "help the audience achieve "
+    plus: str
+    solution: str
+    distractors: str
+    easily_discardable_distractors: str
 
 class GenerateActivityRequest(BaseModel):
     macro_subject: str
@@ -9,7 +15,7 @@ class GenerateActivityRequest(BaseModel):
     education_level: EducationLevel
     learning_outcome: LearningOutcome
     material: str
-    correct_answers_number: int
+    solutions_number: int
     distractors_number: int
     easily_discardable_distractors_number: int
     type: TypeOfActivity
@@ -38,7 +44,8 @@ class Activity(BaseModel):
     language: str = "English"
 
 def generate_activity_prompt(request: GenerateActivityRequest):
-   activity_utils: ActivityUtils = get_activity_utils(request.type, request.correct_answers_number, request.distractors_number, request.easily_discardable_distractors_number)
+   
+   activity_utils: ActivityUtils = get_activity_utils(request.type, request.solutions_number, request.distractors_number, request.easily_discardable_distractors_number)
    prompt = f"""You are an {request.language} expert educator and instructional designer specialized in {request.macro_subject}. 
 Your expertise lies in creating **structured, engaging, and pedagogically sound activities (including exercises, projects and in-class activities)**. 
 
@@ -64,7 +71,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
     mapping = {
         # CHOICE
         TypeOfActivity.MULTIPLE_SELECT: (
-            ActivityCategory.CHOICE,
             "assess if the audience achieved ",
             "A tip on how to approach the exercise",
             f"A list of all the {solutions_number} correct answers",
@@ -72,7 +78,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} easily discardable distractors. These are incorrect answers that are completely wrong and can thus be easily discarded by the audience",
         ),
         TypeOfActivity.MULTIPLE_CHOICE: (
-            ActivityCategory.CHOICE,
             "assess if the audience achieved ",
             "A tip on how to approach the exercise",
             "(list of one element) The only possible correct answer",
@@ -80,7 +85,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} easily discardable distractors. These are incorrect answers that are completely wrong and can thus be easily discarded by the audience",
         ),
         TypeOfActivity.MATCHING: (
-            ActivityCategory.CHOICE,
             "assess if the audience achieved ",
             f"The left column of the matching exercise, so the list of  list of {solutions_number} elements to be matched",
             f"The right column of the matching exercise, so the ordered list of {solutions_number} elements that match the left column",
@@ -88,7 +92,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} easily discardable distractors. These are incorrect answers that are completely wrong and can thus be easily discarded by the audience",
         ),
         TypeOfActivity.ORDERING: (
-            ActivityCategory.CHOICE,
             "assess if the audience achieved ",
             f"Any eventual context or tip on how to approach the exercise",
             f"The ordered list of {solutions_number} elements ",
@@ -98,15 +101,13 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
 
         # QUESTION
         TypeOfActivity.TRUE_OR_FALSE: (
-            ActivityCategory.QUESTION,
             "assess if the audience achieved ",
             "The statement or question to be evaluated as true or false",
-            f"(list of one element) The correct answer. Either 'true' or 'false'",
+            f"(list of one element) The correct answer. Either 'true' or 'false,' + an explanation of why the statement is false",
             f"A list of {distractors_number} common misconceptions that may lead the audience to evaluate the statement or question incorrectly",
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.SHORT_ANSWER_QUESTION: (
-            ActivityCategory.QUESTION,
             "assess if the audience achieved ",
             "The statement to be completed or question to be answered with a short answer",
             f"(list of one element) The correct short answer. From 1 to 4 words",
@@ -114,17 +115,22 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.OPEN_QUESTION: (
-            ActivityCategory.QUESTION,
             "assess if the audience achieved ",
             "The question to be answered",
             f"The list of key concepts that should be included in the answer",
             f"A list of {distractors_number} common misconceptions that may lead the audience to respond incorrectly",
             "here write 'empty'; this field is not used for this type of activity",
         ),
+        TypeOfActivity.CODING: (
+            "assess if the audience achieved ",
+            "A complete and working code that does everything required in the assignment",
+            f"The list of key concepts or functions that should be implemented in the code",
+            f"A list of {distractors_number} too high level libraries or shortcuts that the audience should not use",
+            "here write 'empty'; this field is not used for this type of activity",
+        ),
 
         # FILL_IN_THE_BLANKS
         TypeOfActivity.FILL_IN_THE_BLANKS: (
-            ActivityCategory.FILL_IN_THE_BLANKS,
             "assess if the audience achieved ",
             f"The text to be filled in. It should include {solutions_number} blanks",
             f"The ordered list of {solutions_number} elements that should be filled in the blanks",
@@ -134,7 +140,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
 
         # THEORETICAL
         TypeOfActivity.ESSAY: (
-            ActivityCategory.THEORETICAL,
             "assess if the audience achieved ",
             "The essay topic that the audience should write about. It should be complete and coherent",
             "The list of key concepts that should be included in the essay",
@@ -142,7 +147,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.KNOWLEDGE_EXPOSITION: (
-            ActivityCategory.THEORETICAL,
             "assess if the audience achieved ",
             "The topic that the audience should expose. It should be a detailed description of what is expected",
             "The list of key concepts that should be included in the exposition",
@@ -150,7 +154,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.DEBATE: (
-            ActivityCategory.THEORETICAL,
             "help the audience achieve ",
             "The topic that the audience should debate. It should contain a series of questions to reason about",
             f"The list of {solutions_number} possible key arguments and counterarguments that could be included in the debate",
@@ -158,7 +161,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} concepts or arguments that the audience could, but should never reach as they are too drastic, irrelevant or even completely wrong",
         ),
         TypeOfActivity.BRAINSTORMING: (
-            ActivityCategory.THEORETICAL,
             "help the audience achieve ",
             "The general topic that the audience should brainstorm. It should contain one question to reason about",
             f"A list of {solutions_number} hints and/or questions to help the brainstorming",
@@ -166,7 +168,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} concepts or arguments that the audience could, but should never reach as they are too drastic, irrelevant or even completely wrong",
         ),
         TypeOfActivity.GROUP_DISCUSSION: (
-            ActivityCategory.THEORETICAL,
             "help the audience achieve ",
             "The topic that the audience should discuss together. It should contain a series of generic questions to reason about",
             "here write 'empty'; this field is not used for this type of activity",
@@ -174,7 +175,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",        
         ),
         TypeOfActivity.SIMULATION: (
-            ActivityCategory.THEORETICAL,
             "help the audience achieve ",
             "The topic that will be simulated. Provide description of the context and the starting situation",
             f"A list of {solutions_number} characters to be simulated",
@@ -182,7 +182,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} concepts or arguments that the audience could, but should never reach as they are too drastic, irrelevant or even completely wrong",
         ),
         TypeOfActivity.INQUIRY_BASED_LEARNING: (
-        ActivityCategory.THEORETICAL,
         "help the audience achieve ",
         "A question or problem that will guide the audience's investigation",
         f"A list of {solutions_number} potential areas of investigation or resources to explore",
@@ -192,7 +191,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
 
         # PRACTICAL
         TypeOfActivity.NON_WRITTEN_MATERIAL_ANALYSIS: (
-            ActivityCategory.PRACTICAL,
             "assess if the audience achieved ",
             "Brief description of the non-written material (e.g., a picture, a graph, a sound recording) and the specific aspects to analyze",
             f"A list of the {solutions_number} most important interpretations or features to identify",
@@ -200,7 +198,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             f"A list of {easily_discardable_distractors_number} completely irrelevant or nonsensical interpretations",
         ),
         TypeOfActivity.NON_WRITTEN_MATERIAL_PRODUCTION: (
-            ActivityCategory.PRACTICAL,
             "assess if the audience achieved ",
             "Description of the non-written material to be produced (e.g., a drawing, a presentation, a short skit) and the communication goal",
             f"A list of the {solutions_number} most important key elements or features that the produced material should include",
@@ -208,7 +205,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.CASE_STUDY_ANALYSIS: (
-            ActivityCategory.PRACTICAL,
             "help the audience achieve ",
             "A description of the case study, including relevant background information and events",
             f"A list of the {solutions_number} major problems or factors to consider in the specific case study",
@@ -216,7 +212,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.PROJECT_BASED_LEARNING: (
-            ActivityCategory.PRACTICAL,
             "help the audience achieve ",
             "A description of the project goal and any specific requirements or constraints",
             f"A list of {solutions_number} key stages or milestones for successful project completion",
@@ -224,7 +219,6 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
             "here write 'empty'; this field is not used for this type of activity",
         ),
         TypeOfActivity.PROBLEM_SOLVING_ACTIVITY: (
-            ActivityCategory.PRACTICAL,
             "assess if the audience achieved ",
             "A clear description of the problem to be solved, including any necessary information or constraints",
             f"A list of {solutions_number} possible and effective solutions to the problem",
@@ -235,24 +229,22 @@ def get_activity_utils(activity_type: TypeOfActivity, solutions_number: int, dis
     activity_info = mapping.get(activity_type)
     if activity_info:
         return ActivityUtils(
-            category=activity_info[0],
-            goal=activity_info[1],
-            plus=activity_info[2],
-            solution=activity_info[3],
-            distractors=activity_info[4],
-            easily_discardable_distractors=activity_info[5],
+            goal=activity_info[0],
+            plus=activity_info[1],
+            solution=activity_info[2],
+            distractors=activity_info[3],
+            easily_discardable_distractors=activity_info[4],
         )
     return None
 
 """Test text:
 {
-  "title": "Roman Empire's End",
   "macro_subject": "History",
   "topic": "The Fall of the Western Roman Empire",
   "education_level": "high school",
   "learning_outcome": "the ability to recall or recognize simple facts and definitions",
   "material": "a short text describing the reasons for the fall of Rome",
-  "correct_answers_number": 3,
+  "solutions_number": 3,
   "distractors_number": 4,
   "easily_discardable_distractors_number": 2,
   "type": "brainstorming",

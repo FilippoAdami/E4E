@@ -5,7 +5,7 @@ from .generate_material_utils import GenerateMaterialRequest, Material
 
 router = APIRouter(
     prefix="/tasks",
-    tags=["generate"],
+    tags=["material"],
     responses={ 400: {"description": "Bad Request"},
                 401: {"description": "Unauthorized"},
                 404: {"description": "Not found"},

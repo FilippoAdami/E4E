@@ -21,10 +21,18 @@ class EducationLevel(Enum):
 class LearningOutcome(Enum):
     DECLARATIVE = "the ability to recall or recognize simple facts and definitions"
     UNDERSTANDING = "the ability to explain concepts and principles, and recognize how different ideas are related"
-    PROCEDURAL = "the bility to apply knowledge and perform operations in practical contexts"
+    PROCEDURAL = "the ability to apply knowledge and perform operations in practical contexts"
     METACOGNITIVE = "the ability to assess your own understanding, identify gaps in knowledge, and strategize ways to close those gaps"
     SCHEMATIC = "the ability to synthesize and organize concepts into a framework that allows for advanced problem-solving and prediction"
     TRANSFORMATIVE = "the ability to generate new knowledge, challenge existing paradigms, and make significant contributions to the field"
+
+class LearningObjectives(BaseModel):
+    knowledge: str
+    skills: str
+    attitude: str
+
+    def toString(self):
+        return f"\nKnowledge: {self.knowledge},\nSkills: {self.skills},\nAttitude: {self.attitude}"
 
 class TypeOfActivity(Enum):
     OPEN_QUESTION = "open question"
@@ -36,6 +44,7 @@ class TypeOfActivity(Enum):
     ORDERING = "ordering"
     MULTIPLE_CHOICE = "multiple choice"
     MULTIPLE_SELECT = "multiple select"
+    CODING = "coding"
     ESSAY = "essay"
     KNOWLEDGE_EXPOSITION = "knowledge exposition"
     #TEXT_COMPREHENSION = "text comprehension"
@@ -56,32 +65,8 @@ class TypeOfActivity(Enum):
     #FLOWCHARTS = "flowcharts"
     #TIMELINES = "timelines"
 
-class ActivityCategory(Enum):
-    FILL_IN_THE_BLANKS = "fill in the blanks"
-    QUESTION = "question"
-    CHOICE = "choice"
-    PRACTICAL = "practical"
-    THEORETICAL = "theoretical"
-    DELIVERABLE = "deliverable"
-    PROJECT = "project"
-    REPORT = "report"
-    GROUP_WORK = "group work"
-    
-class TypeOfAssignment(Enum):
-    THEORETICAL = "theoretical"
-    PRACTICAL = "practical"
-    CODE = "code"
-
 class TypeOfAssessment(Enum):
     PEER_REVIEW = "peer review"
     SELF_ASSESSMENT = "self assessment"
     TEACHER_ASSESSMENT = "teacher assessment"
     AUTOMATED_ASSESSMENT = "automated assessment"
-
-class ActivityUtils(BaseModel):
-    category: ActivityCategory
-    goal: str # "assess if the audience achieved " / "help the audience achieve "
-    plus: str
-    solution: str
-    distractors: str
-    easily_discardable_distractors: str
