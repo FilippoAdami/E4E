@@ -7,7 +7,7 @@ class SummarizeResponse(BaseModel):
 
 class SummarizeRequest(BaseModel):
     text: str
-    model: str = None
+    model: str = "Gemini"
     style: TextStyle = TextStyle.STANDARD
     education_level: EducationLevel = EducationLevel.HIGH_SCHOOL
     learning_outcome: LearningOutcome = LearningOutcome.DECLARATIVE

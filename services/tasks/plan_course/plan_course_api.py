@@ -15,18 +15,38 @@ router = APIRouter(
 @router.post("/plan_course", response_model=CoursePlan)
 async def plan_course( request: PlanCourseRequest, access_key: str = Header(...) ):
     """
-    Plan a course based on the given request.
-    topics: a list of topics to be covered in the lesson. Each topic should be a dictionary with the following keys:
-        topic: the topic to be covered
-        explanation: a brief explanation of the topic
-        learning_outcome: the desired learning outcome
-    learning_outcome: the desired learning outcome
-    language: str = "English"
-    macro_subject: the subject of the lesson
-    title: the title of the lesson
-    education_level: the education level of the audience
-    context: the audience context
+    Plan a course based on:
+
+    - **title** _(str)_: the title of the lesson
+    - **macro_subject** _(str)_: the macro subject of the lesson
+    - **education_level** _(EducationLevel)_: the education level of the lesson
+    - **learning_objectives** _(LearningObjectives)_: the learning objectives of the lesson:
+        - **knowledge** _(str)_: the knowledge the learner should acquire during the course
+        - **skills** _(str)_: The skills that the learner should have at the end of the course.
+        - **attitude** _(str)_: The attitude that the learner should develop during the course.
+    - **number_of_lessons** _(int)_: the number of lessons in the course
+    - **duration_of_lesson** _(int)_: the duration (in minutes) of each lesson
+    - **language** _(str)_: the language of the course
+    - **model** _(str)_: the model to be used for the course, defualts to Gemini
+
+    Returns a JSON object with the following fields:
+
+    - **title** _(str)_: the title of the lesson
+    - **macro_subject** _(str)_: the macro subject of the lesson
+    - **education_level** _(EducationLevel)_: the education level of the lesson
+    - **learning_objectives** _(LearningObjectives)_: the learning objectives of the lesson:
+    - **number_of_lessons** _(int)_: the number of lessons in the course
+    - **duration_of_lesson** _(int)_: the duration (in minutes) of each lesson
+    - **prerequisites** _(list[str])_: the prerequisites for the course
+    - **nodes** _(list[LessonNode])_: the nodes of the course:
+        - **title** _(str)_: the title of the lesson
+        - **learning_outcome** _(LearningOutcome)_: the macro subject of the lesson
+        - **topics** _(list[Topic])_: the topics of the lesson:
+            - **topic** _(str)_: the topic of the lesson
+            - **explanation** _(str)_: the explanation of the topic
+    - **language** _(str)_: the language of the course, defaults to English
     """
+
     try: 
         authenticate(access_key)
         result = course_plan(request)

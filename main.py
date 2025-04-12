@@ -4,8 +4,8 @@ import importlib
 
 # List of service modules (you can automate this discovery)
 services = [
-    "services.embeddings.upload.upload_api",
-    "services.embeddings.vector_search_retrieval.vector_search_api",
+    "services.grounding.upload.upload_api",
+    "services.grounding.vector_search_retrieval.vector_search_api",
     "services.tasks.summarize.summarize_api",
     "services.tasks.translate.translate_api",
     "services.tasks.plan_lesson.plan_lesson_api",

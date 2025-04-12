@@ -21,8 +21,8 @@ class QueryResponse(BaseModel):
     search_results: List[QueryResult]  # List of results with metadata and content
 
 router = APIRouter(
-    prefix="/embeddings",
-    tags=["vector_search"],
+    prefix="/vector-search",
+    tags=["grounding"],
     responses={ 400: {"description": "Bad Request"},
                 401: {"description": "Unauthorized"},
                 404: {"description": "Not found"},
@@ -38,6 +38,9 @@ async def query_vector_search(request: QueryRequest, access_key: str = Header(..
     - **uri**: MongoDB connection URI
     - **db_name**: Database name
     - **collection_name**: Collection name
+
+    Returns a List[Document] containing the search results
+
     """
     try:
         authenticate(access_key)

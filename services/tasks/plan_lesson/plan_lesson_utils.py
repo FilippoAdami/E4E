@@ -17,15 +17,9 @@ class Topic(BaseModel):
     def __str__(self):
         return f"{self.topic} - {self.explanation}."
 
-    def to_json(self):
-        return self.model_dump()
-
 class PlanLessonResponse(BaseModel):
     nodes: List[Node]
     prerequisites: List[str]
-
-    def to_json(self):
-        return self.model_dump()
 
 class PlanLessonRequest(BaseModel):
     topics: List[Topic]
@@ -35,10 +29,8 @@ class PlanLessonRequest(BaseModel):
     title: str
     education_level: EducationLevel
     context: str
-    model: str = None
+    model: str = "Gemini"
 
-    def to_json(self):
-        return self.model_dump()
 
 class LessonPlan(BaseModel):
     title: str

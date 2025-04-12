@@ -15,8 +15,8 @@ class UploadResponse(BaseModel):
     results: str
 
 router = APIRouter(
-    prefix="/embeddings",
-    tags=["upload"],
+    prefix="/upload",
+    tags=["grounding"],
     responses={ 400: {"description": "Bad Request"},
                 401: {"description": "Unauthorized"},
                 404: {"description": "Not found"},

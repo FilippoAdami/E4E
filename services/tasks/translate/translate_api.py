@@ -16,9 +16,16 @@ router = APIRouter(
 async def translate_text( request: TranslateRequest, access_key: str = Header(...) ):
     """
     Translate a text into a specified language using the specified model.
-    - **text**: The text to translate.
-    - **model**: The model to use for translation. (optional)
-    - **language**: The language you want to translate into. (optional, default: English)
+
+    - **text** _(str)_: The text to translate.
+    - **model** _(str)_: The model to use for translation, defaults to Gemini.
+    - **language** _(str)_: The language you want to translate into. (optional, default: English)
+
+    Returns a JSON object containing:
+
+    - **translation** _(str)_: The translated text.
+
+    Note that for JSONs, only the values will be translated.
     """
     try: 
         authenticate(access_key)

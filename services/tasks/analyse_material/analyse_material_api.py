@@ -15,7 +15,26 @@ router = APIRouter(
 @router.post("/analyse_material", response_model=AnalyseMaterialResponse)
 async def analyse_material( request: AnalyseMaterialRequest, access_key: str = Header(...) ):
     """
+    Analyse a material and extract meaningful information. It's based on:
+
+    - **text** _(str)_: The text to analyse.
+    - **model** _(str)_: The model to use, default is "Gemini".
+
+    Returns a JSON object with the following fields:
+
+    - **language** _(str)_: The language of the material
+    - **macro_subject** _(str)_: The macro subject of the material
+    - **title** _(str)_: The title of the material
+    - **education_level** _(str)_: The education level of the material
+    - **learning_outcome** _(str)_: The learning outcome of the material
+    - **topics** _(list[Topic])_: The topics of the material. Each topic is a list of:
+        - **topic** _(str)_: The name of the topic
+        - **explanation** _(str)_: The explanation of the topic
+    - **keywords** _(list[str])_: The keywords of the material
+    - **prerequisites** _(list[str])_: The prerequisites of the material
+    - **estimated_duration** _(int)_: The estimated duration in minutes required to read and understand the generated material
     """
+
     try: 
         authenticate(access_key)
 

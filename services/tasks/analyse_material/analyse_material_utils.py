@@ -15,10 +15,10 @@ class AnalyseMaterialResponse(BaseModel):
 
 class AnalyseMaterialRequest(BaseModel):
     text: str
-    model: str = "GEMINI"
+    model: str = "Gemini"
 
 class Analysis(BaseModel):
-    language:str = "English"
+    language: str
     macro_subject: str
     title: str
     education_level: EducationLevel

@@ -20,7 +20,7 @@ class GenerateActivityRequest(BaseModel):
     easily_discardable_distractors_number: int
     type: TypeOfActivity
     language: str = "English"
-    model: str = None
+    model: str = "Gemini"
 
 class GenerateActivityResponse(BaseModel):
     assignment: str
@@ -40,7 +40,7 @@ class Activity(BaseModel):
     solutions: list[str]
     distractors: list[str]
     easily_discardable_distractors: list[str]
-    type: str
+    type: TypeOfActivity
     language: str = "English"
 
 def generate_activity_prompt(request: GenerateActivityRequest):

@@ -20,7 +20,7 @@ class DefineSyllabusRequest(BaseModel):
     education_level: EducationLevel
     additional_information: str
     language: str = "English"
-    model: str = "gemini"
+    model: str = "Gemini"
 
 class Syllabus(BaseModel):
     general_subject: str
@@ -50,7 +50,7 @@ Each **Section** consists of:
 - **MacroTopic** (in {request.language}): The main topic of the section. Note that this macro topics should be very broad. For example, if the general subject is "History of the Roman Empire", possible macro topics could be "From the Birth of Rome to the first Republic", "The Republic of Rome", "The Roman Empire", "The Fall of the Roman Empire and its heritage", etc.
 - **Details** (in {request.language}): A short description of the macro topic, providing a brief overview of the content to be covered, from where to where.
 - **Learning Objectives**: 
-    - Knowledge (in {request.language}): The level of knowledge that the learner acquire during the section.
+    - Knowledge (in {request.language}): The knowledge that the learner acquire during the section.
     - Skills (in {request.language}): The skills that the learner should have at the end of the section.
     - Attitude (in {request.language}): The attitude that the learner should develop during the section.
 

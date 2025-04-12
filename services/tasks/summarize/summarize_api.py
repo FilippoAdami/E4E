@@ -16,9 +16,17 @@ router = APIRouter(
 async def summarize_text( request: SummarizeRequest, access_key: str = Header(...) ):
     """
     Summarize a text using the specified model and style.
-    - **text**: The text to summarize.
-    - **model**: The model to use for summarization. (optional)
-    - **style**: The style of the summary. (optional, default: Standard)
+
+    - **text** _(str)_: The text to summarize.
+    - **model** _(str)_: The model to use for summarization, defaults to Gemini.
+    - **style** _(TextStyle)_: The style of the summary. (optional, default: Standard)
+    - **education_level** _(EducationLevel)_: The education level of the audience. (optional, default: High School)
+    - **learning_outcome** _(LearningOutcome)_: The learning outcome of the audience. (optional, default: Declarative)
+ 
+    Returns a JSON object containing:
+
+    - **summary** _(str)_: The summarized text.
+    - **keywords** _(list[str])_: A list of keywords relevant to the topic.
     """
     try: 
         authenticate(access_key)

@@ -15,17 +15,35 @@ router = APIRouter(
 @router.post("/plan_lesson", response_model=LessonPlan)
 async def plan_lesson( request: PlanLessonRequest, access_key: str = Header(...) ):
     """
-    Plan a lesson based on the given request.
-    topics: a list of topics to be covered in the lesson. Each topic should be a dictionary with the following keys:
-        topic: the topic to be covered
-        explanation: a brief explanation of the topic
-        learning_outcome: the desired learning outcome
-    learning_outcome: the desired learning outcome
-    language: str = "English"
-    macro_subject: the subject of the lesson
-    title: the title of the lesson
-    education_level: the education level of the audience
-    context: the audience context
+    Plan a lesson based on:\n
+
+    - **topics** _(list[Topic])_: a list of topics to be covered in the lesson. Each topic should be a dictionary with the following keys:
+        - **topic** _(str)_: the topic to be covered
+        - **explanation** _(str)_: a brief explanation of the topic
+        - **learning_outcome** _(LearningOutcome)_: the desired learning outcome for the specific topic
+    - **learning_outcome** _(LearningOutcome)_: the desired learning outcome for the lesson
+    - **language** _(str)_: the language of the lesson, defaults to "English"
+    - **macro_subject** _(str)_: the macro subject of the lesson (for example, "Mathematics", "Science", etc.)
+    - **title** _(str)_: the title of the lesson
+    - **education_level** _(EducationLevel)_: the education level of the audience
+    - **context** _(str)_: the audience context, it is used to tailor the suggestions for the learning activity to the specific audience
+    - **model** _(str)_: the model to be used for the lesson, defaults to Gemini
+
+    Returns a JSON object containing the lesson plan, including:
+
+    - **title** _(str)_: the title of the lesson
+    - **macro_subject** _(str)_: the macro subject of the lesson
+    - **education_level** _(EducationLevel)_: the education level of the audience
+    - **learning_outcome** _(LearningOutcome)_: the desired learning outcome for the lesson
+    - **prerequisites** _(list[str])_: a list of prerequisites for the lesson
+    - **nodes** _(list[Node])_: a list of nodes for the lesson, where each node is a dictionary with the following keys:
+        - **type** _(TypeOfActivity)_: the type of activity (for example, "lecture", "discussion", etc.)
+        - **topic** _(str)_: the topic of the activity
+        - **details** _(str)_: the details of the activity
+        - **learning_outcome** _(LearningOutcome)_: the desired learning outcome for the activity
+        - **duration** _(int)_: the duration of the activity in minutes
+    **context** _(str)_: the audience context
+    **language** _(str)_: the language of the lesson
     """
     try: 
         authenticate(access_key)

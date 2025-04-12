@@ -19,10 +19,7 @@ class GenerateMaterialRequest(BaseModel):
     learning_outcome: LearningOutcome
     duration: int
     language: str = "English"
-    model: str = None
-
-    def to_json(self):
-        return self.model_dump()
+    model: str = "Gemini"
 
 class GenerateMaterialResponse(BaseModel):
     material: str
